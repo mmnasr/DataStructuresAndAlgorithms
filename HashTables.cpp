@@ -26,7 +26,11 @@ public:
     HashTable();
     ~HashTable();
     unsigned int hashIndex(std::string key);
-    void addValue(std::string key, T value);
+    std::string getKey(T value);
+    T getValue(std::string key);
+    void putValue(std::string key, T value);
+    void delValue(std::string key);
+    void printValue(std::string key);
     void printTable(void); 
 };
 
@@ -34,7 +38,13 @@ public:
 template <class T>
 HashTable<T>::HashTable()
 {
-    TABLE_SIZE = 101;
+    /* Size of the TABLE (BUCKET Length). */
+    /* Important note: The load factor defined as the (number of items) / (number of buckets) */
+    /* should be small, e.g. < 10. If this number becomes very large, it would be useful to */
+    /* to increase TABLE_SIZE and re-arrange the hash table again. */
+    TABLE_SIZE = 2;
+    
+    /* Allocate memory for pointers in the HashTableArray */
     HashTableArray = new NodePtr[TABLE_SIZE];
     for (int i = 0; i < TABLE_SIZE; ++i)
     {
@@ -46,7 +56,6 @@ HashTable<T>::HashTable()
 template <class T>
 HashTable<T>::~HashTable()
 {
-    HashTableArray = new NodePtr[TABLE_SIZE];
     for (int i = 0; i < TABLE_SIZE; ++i)
     {
         NodePtr ptr = HashTableArray[i];
@@ -59,43 +68,29 @@ HashTable<T>::~HashTable()
     delete []HashTableArray;
 }
 
-
 /* Converts a string to an index between 0 and TABLE_SIZE */
-/* There are many functions that can do this operation, but this one seems to be very */
-/* at picking equally distributed values efficient */
+/* There are many functions that can do this operation. It is important to */
+/* have almost a uniform and a random distribution of keys in the hash table. */
 template <class T>
 unsigned int HashTable<T>::hashIndex(std::string key)
 {   
 
-    unsigned int idx;
-    int which_hash = 2; 
-    // https://en.wikipedia.org/wiki/Linear_congruential_generator 
-    if (which_hash == 0) {
-        idx = 33;
-        for(unsigned int i = 0; i < key.size(); ++i)
-        {
-        // % 4294967296 not necessary, but there for the example.
-            idx = (1013904223 + idx*1664525) % 4294967296;
-        }
-    } else if (which_hash == 1) {
-    
-        idx = 0;
-        for(unsigned int i = 0; i < key.size(); ++i)
-        {
-            idx += (unsigned int)key[i];
-        }
-    } else {
-        idx = 0; 
-        for(unsigned int i = 0; i < key.size(); ++i)
-        {
-            idx += idx * 65599 + (unsigned int)key[i];
-        }
+    unsigned int idx = 0;
+//    for(unsigned int i = 0; i < key.size(); ++i)
+//    {
+//        idx += (unsigned int)key[i];
+//    }
+    for(unsigned int i = 0; i < key.size(); ++i)
+    {
+        idx += idx * 65599 + (unsigned int)key[i];
     }
     return idx % TABLE_SIZE;
 }
 
+/* Put a value corresponding to given key into table or the linked lists */
+/* Note: If key already exists, the old value will be over-written by the new value */
 template <class T>
-void HashTable<T>::addValue(std::string key, T value)
+void HashTable<T>::putValue(std::string key, T value)
 {
     /* get table index corresponding to current key value */
     unsigned int idx = hashIndex(key); 
@@ -114,30 +109,136 @@ void HashTable<T>::addValue(std::string key, T value)
         new_n->key = key; 
         new_n->value = value; 
         new_n->next = NULL; 
-        while (ptr != NULL && ptr->key != key)
+        while (ptr->next != NULL && ptr->key != key)
         {   
             ptr = ptr->next; 
         }
-        /* add new node */
-        if (ptr == NULL) {
-            ptr = new_n;
-        /* if 'key' already exists, replace the old value with new value. */
-        } else {
+        /* If 'key' already exists, replace the old value with the new one. */
+        if (ptr->key == key) {
             ptr->value = value;
+        /* add new node */
+        } else {
+            ptr->next = new_n;
         }
+    }
+}
+
+/* Return value corresponding to a given key */
+template<class T>
+T HashTable<T>::getValue(std::string key)
+{
+    unsigned int idx = hashIndex(key); 
+    NodePtr ptr = HashTableArray[idx];
+    while (ptr != NULL && ptr->key != key) 
+    {
+        ptr = ptr->next; 
+    }
+    if (ptr == NULL) {
+        std::cout << "***Error. Key " << key << " does not exist.***" << std::endl;
+        //throw std::invalid_argument("Key does not exist." );
+        return (T)NULL;
+    } else {
+        return ptr->value;
+    }
+}
+
+template<class T>
+std::string HashTable<T>::getKey(T value)
+{
+    for (unsigned int i=0; i<TABLE_SIZE; ++i) 
+    {
+        NodePtr ptr = HashTableArray[i];
+        while (ptr != NULL && ptr->value != value) 
+        {
+            ptr = ptr->next; 
+        }/* while */
+        if (ptr == NULL) {
+            continue; 
+        } else {
+                return ptr->key; 
+        } /* if-else */
+    } /* for */
+    std::cout << "Value " << value << " does not exist in table." << std::endl;
+    return "";
+}
+
+template <class T>
+void HashTable<T>::delValue(std::string key)
+{
+    
+    unsigned int idx = hashIndex(key); 
+    NodePtr ptr = HashTableArray[idx];
+    if (ptr != NULL) {
+        /* First item on the table is equal to key */
+        if (ptr->key == key) {
+            /* Case 1: Only 1 item. Item will be deleted */
+            if (ptr->next == NULL) {
+                HashTableArray[idx] = NULL;
+                std::cout << "Key '" << key <<"' deleted." << std::endl;
+                return;
+            }
+            /* Case 2: First item on table should be deleted, but more items are in the list corresponding to idx */
+            else {
+                NodePtr delNode = HashTableArray[idx]; 
+                HashTableArray[idx] = HashTableArray[idx]->next;
+                delete delNode;
+                std::cout << "Key '" << key <<"' deleted." << std::endl;
+                return;
+            }
+        } else {
+            NodePtr p_curr = HashTableArray[idx];
+            NodePtr p_next = HashTableArray[idx]->next;
+            
+            while (p_next != NULL && p_next->key != key)
+            {
+                p_curr = p_next; 
+                p_next = p_next->next;
+            }
+            if (p_next == NULL) {
+                std::cout << "Error. Table does not include key '" << key <<"'. No items deleted." << std::endl;
+                return;
+            } else {
+                NodePtr delPtr = p_next; 
+                p_next = p_next->next; 
+                p_curr->next = p_next; 
+                delete delPtr;
+                std::cout << "Key '" << key <<"' deleted." << std::endl;
+            }
+        }
+    } 
+    else {
+        std::cout << "Error. Table does not include key '" << key <<"'. No items deleted." << std::endl;
+    }
+}
+template <class T>
+void HashTable<T>::printValue(std::string key)
+{
+    unsigned int idx = hashIndex(key);
+    NodePtr ptr = HashTableArray[idx];
+    while (ptr != NULL && ptr->key != key) 
+    {
+        ptr = ptr->next; 
+    } 
+    if (ptr == NULL) {
+
+        std::cout << "Not Found: (" << key <<","<<"None)" << std::endl;
+    } else {
+        std::cout << "Found: (" << key <<","<<ptr->value << ")" << std::endl;
     }
 }
 
 template <class T>
 void HashTable<T>::printTable(void)
 {
-    std::cout << "printing hash table...\n";
+    std::cout << "#######################################" << std::endl;
+    std::cout << "Printing hash table. Maximum (potential) table size: " << TABLE_SIZE << std::endl;
+    std::cout << "#######################################" << std::endl;
     for(int i=0; i<TABLE_SIZE; i++) 
     {
         if (HashTableArray[i] != NULL)
         {
             NodePtr ptr = HashTableArray[i];
-            std::cout << "Table idx: "<< i << std::endl; 
+            std::cout << "Table index: "<< i << std::endl; 
             while (ptr != NULL) 
             {
                 std::cout << "(" << ptr->key << "," << ptr->value << ")" << std::endl; 
@@ -151,11 +252,27 @@ void HashTable<T>::printTable(void)
 int main(int argc, char *argv[]) 
 {
     HashTable<int> t; 
-    t.addValue("test", 1);
-    t.addValue("test", 2);
-    t.addValue("yoyo", 2);
-    t.addValue("yoyo", 5);
-    t.addValue("test1", 2);
+    t.putValue("foo", 1);
+    t.putValue("foo", 2); /* overwrite old value equal to 1 */
+    t.putValue("bar", 2);
+    t.putValue("bar1", 2);
+    t.putValue("foo1", -3);
+    t.putValue("foo2", -4);
+    t.putValue("foo3", -5);
+    t.putValue("foo4", -6);
+    t.putValue("foo5", -7);
     t.printTable(); 
+    t.printValue("foo3"); 
+    std::cout << "Value of foo1 (should be -3): " << t.getValue("foo1") << std::endl;
+    std::cout << "Key for value 5 (should not exist): " << t.getKey(5) << std::endl;
+    std::cout << "Deleting values from table:\n";
+    t.delValue("foo3"); 
+    t.delValue("foo3"); /* should not exist */
+    t.delValue("foo2"); 
+    t.delValue("bar"); 
+    t.printTable(); 
+    t.delValue("foo4"); 
+    t.printTable(); 
+    
     return 0;
 }
