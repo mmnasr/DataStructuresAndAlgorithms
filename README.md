@@ -1,2 +1,8 @@
 # DataStructuresAndAlgorithms
-Various examples of codes implemented for different algorithms in computer science.
+Various examples C++ implemention of different algorithms in computer science.
+
+#### [Linked Lists](https://en.wikipedia.org/wiki/Linked_list)
+Implemented C++ code can be found [here](LinkedLists.cpp).
+
+#### [Hash Tables](https://en.wikipedia.org/wiki/Hash_table)
+Implemented C++ code can be found [here](HashTables.cpp).
