@@ -5,6 +5,7 @@
 /***************************************************************************************/
 
 #include <iostream> 
+#include <iomanip>
 #include <deque>
 
 template <class T> 
@@ -27,6 +28,7 @@ class BTree {
         void removeKeyPrivate(T key, Node* ptr);
         void removeLeafPrivate(Node* leaf, Node* parent); 
         Node* getSmallestNodeInSubbranchPrivate(Node *current); 
+        void printTreePrivate(Node* ptr, unsigned int indent); 
         
     public: 
         BTree(); 
@@ -42,6 +44,8 @@ class BTree {
         void printNodeAndParent(T key); 
         Node* getNodePrivate(T key, Node* ptr);
         void printInLevel(void);
+        void printTree(void); 
+        
         
 };
 
@@ -489,6 +493,32 @@ void BTree<T>::printInLevel(void)
     }
 }
 
+template <class T>
+void BTree<T>::printTree(void)
+{
+    unsigned int indent = 0;
+    printTreePrivate(root, indent); 
+}
+
+template <class T>
+void BTree<T>::printTreePrivate(Node* ptr, unsigned int indent)
+{
+    if (ptr != NULL) 
+    {
+        unsigned int offset = 7;
+        if (ptr->right != NULL) printTreePrivate(ptr->right, indent+offset); 
+        if (indent) {
+            std::cout << std::setw(indent) << ' ';
+        }
+        if (ptr->right != NULL) std::cout<<" /\n" << std::setw(indent) << ' '; 
+        std::cout<< ptr->key << "\n ";
+        if(ptr->left != NULL) {
+            std::cout << std::setw(indent) << ' ' <<" \\\n";
+            printTreePrivate(ptr->left, indent+offset);
+        }
+    } 
+}
+
 /* Let's test our implementation */
 int main(int argc, char *argv[]) 
 {
@@ -513,13 +543,14 @@ int main(int argc, char *argv[])
     tr.printNodeAndParent(11);
     tr.printInOrder(); 
     std::cout << std::endl;
-    tr.removeKey(5); 
+//    tr.removeKey(5); 
     tr.printInOrder(); 
     std::cout << std::endl;
-    tr.removeKey(0); 
+//    tr.removeKey(0); 
     tr.printInOrder(); 
     std::cout << std::endl;
     tr.printInLevel(); 
+    tr.printTree();
 
     return 0; 
 }
