@@ -1,5 +1,5 @@
 #include <iostream>
-
+/* code */
 struct Node {
     int value;
     Node* next;
