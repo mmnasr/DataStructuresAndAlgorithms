@@ -1,5 +1,6 @@
 #include <iostream>
 #include <queue>
+#include <vector>
 
 int max(int a, int b) {
     if (a > b) return a;
@@ -18,6 +19,9 @@ private:
     struct Node* createNodePrivate(int key);
     int heightPrivate(struct Node* node);
     int diameterPrivate(struct Node* node, int* height);
+    void preOrderPrivate(Node* node, std::vector<int>* preOrder);
+    void inOrderPrivate(Node* node, std::vector<int>* inOrder);
+    bool isSubsetPrivate(std::vector<int> org, std::vector<int> sub);
     
 public:
     BTree();
@@ -28,6 +32,9 @@ public:
     int sumLevel(int level);
     int height(void);
     int diameter(void);
+    bool isSubtree(class BTree sub);
+    std::vector<int> inOrder(void);
+    std::vector<int> preOrder(void);
 };
 
 BTree::BTree() {
@@ -196,44 +203,76 @@ int BTree::diameterPrivate(struct Node* node, int* height) {
 }
 
 bool BTree::isSubtree(class BTree sub) {
-    std::stack<int> current_preorder = this->preOrder();
-    std::stack<int> current_inorder = this->inOrder();
+    std::vector<int> this_preorder = this->preOrder();
+    std::vector<int> this_inorder = this->inOrder();
 
-    std::stack<int> sub_preorder = sub.preOrder();
-    std::stack<int> sub_inorder = sub.inOrder();
+    std::vector<int> sub_preorder = sub.preOrder();
+    std::vector<int> sub_inorder = sub.inOrder();
 
-    if (this->isSubset(current_preorder, sub_preorder) && 
-        this->isSubset(current_inorder, sub_inorder) ) {
+    if (this->isSubsetPrivate(this_preorder, sub_preorder) && 
+        this->isSubsetPrivate(this_inorder, sub_inorder) ) {
         return true;
     }
     return false;
 }
 
-std::stack<int> BTree::preOrder(void) {
-    std::stack<int> pre;
-    
+std::vector<int> BTree::preOrder(void) {
+    std::vector<int> preOrder;
+    this->preOrderPrivate(this->root, &preOrder);
+    return preOrder;
+}
+
+void BTree::preOrderPrivate(Node* node, std::vector<int>* preOrder) {
+    if (node == NULL) return;
+    this->preOrderPrivate(node->left, preOrder);
+    this->preOrderPrivate(node->right, preOrder);
+    preOrder->push_back(node->data);
+}
+
+std::vector<int> BTree::inOrder(void) {
+    std::vector<int> inOrder;
+    this->inOrderPrivate(this->root, &inOrder);
+    return inOrder;
+}
+
+void BTree::inOrderPrivate(Node* node, std::vector<int>* inOrder) {
+    if (node == NULL) return;
+    this->inOrderPrivate(node->left, inOrder);
+    inOrder->push_back(node->data);
+    this->inOrderPrivate(node->right, inOrder);
+}
+
+bool BTree::isSubsetPrivate(std::vector<int> org, std::vector<int> sub) {
+    /* check if vector sub is a subset of org vector */
+    if (org.size() < sub.size()) return false;
+    if ( (org.size() ==0) || (sub.size() == 0)) return false;
+    std::vector<int>::iterator ptr_org, ptr_sub; 
+      
+    for (ptr_sub = sub.begin(); ptr_sub < sub.end(); ptr_sub++) {
+        for (ptr_org = org.begin(); ptr_org < org.end(); ptr_org++) {
+            if (*ptr_org == *ptr_sub) break;
+        }
+        if (ptr_org == org.end()) return false;
+    }
+    return true;
 }
 
 int main(int argc, char* argv[]) {
     BTree t;
-    std::cout << "Height: " << t.height() << std::endl;    
     t.insert(5);
     t.insert(2);
     t.insert(8);
-    std::cout << "Diameter: " << t.diameter() << std::endl;
-    t.insert(10);
-    t.insert(3);
-    t.insert(9);
-    std::cout << "Height: " << t.height() << std::endl;
-    std::cout << std::endl;    
-    int level = 5;
-    t.printLevel(level);
-    std::cout << "\nSum at level "<< level << " is: " << t.sumLevel(level) << std::endl;
+    t.insert(12);
+    t.insert(0);
+    t.insert(7);
+    
+    BTree ts;
+    ts.insert(12);
+    ts.insert(0);
+    ts.insert(7);
+    std::cout << "Is subtree:? " << t.isSubtree(ts) << std::endl;
     return 0;
 }
-
-
-
 
 
 
