@@ -18,7 +18,9 @@ private:
     struct Node* createNodePrivate(int key);
     int heightPrivate(struct Node* node);
     int diameterPrivate(struct Node* node, int* height);
-    
+    struct Node* deletePrivate(Node* node, int key);
+    struct Node* minValueNode(struct Node* node);
+
 public:
     BTree();
     ~BTree();
@@ -28,6 +30,7 @@ public:
     int sumLevel(int level);
     int height(void);
     int diameter(void);
+    void deleteKey(int key);
 };
 
 BTree::BTree() {
@@ -195,6 +198,46 @@ int BTree::diameterPrivate(struct Node* node, int* height) {
     return max(left_height+right_height+1, max(left_diameter, right_diameter));
 }
 
+void BTree::deleteKey(int key) {
+    if (this->isEmpty()) {
+        std::cout << "Empty tree. nothing to be deleted." << std::endl;
+        return;
+    }
+    this->root = this->deletePrivate(this->root, key);
+}
+
+struct BTree::Node* BTree::deletePrivate(Node* node, int key) {
+    if (node == NULL) return node;
+    if (key < node->data) {
+        node->left = this->deletePrivate(node->left, key);
+    } else if (key > node->data) {
+        node->right = this->deletePrivate(node->right, key);
+    } else {/* key found */
+        if (node->left == NULL) {
+            struct Node* temp = node->right;
+            delete node;
+            node = NULL;
+            return temp;
+        } else if (node->right == NULL) {
+            struct Node* temp = node->left;
+            delete node;
+            node = NULL;
+            return temp;
+        } 
+        Node* minNode = this->minValueNode(node->right);
+        node->data = minNode->data;
+        node->right = this->deletePrivate(node->right, minNode->data);
+    }
+}
+
+struct BTree::Node* minValueNode(struct Node* node) {
+    if (node == NULL) return node;
+    Node* current = node;
+    while (currnet->left != NULL) {
+        current = current->left;
+    }
+    return current;
+}
 
 int main(int argc, char* argv[]) {
     BTree t;
