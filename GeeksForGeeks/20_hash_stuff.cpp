@@ -89,17 +89,46 @@ void printTravelItinerary(std::map<std::string, std::string> data) {
 	}
 }
 
+// TODO NOT CORRECT
+int countEmployeeManagerPrivate(std::map<char, std::vector<char> > data, char manager, std::map<char, int> employeeCountUnderManager) {
+	/* data[manager] = vector of direct employees reporting tom manager */
+	if (data.count(manager) == 0) {
+		employeeCountUnderManager[manager] = 0;
+		return 0;
+	}
+	if 	(employeeCountUnderManager.count(manager)) {
+		return employeeCountUnderManager[manager];
+	}
+
+	std::vector<char>::iterator it;
+	int count = employeeCountUnderManager[manager];
+	for (it = data[manager].begin(); it != data[manager].end(); it++) {
+		//std::cout << "manager: " << manager << " count:" << employeeCount << std::endl;
+		char employeeName = *it;
+		count += countEmployeeManagerPrivate(data, employeeName, employeeCountUnderManager);
+	}
+	employeeCountUnderManager[manager] = count;
+	return count;
+}
+
+// TODO NOT CORRECT
 void printEmployeeManagerCount(std::map<char, char> data) {
-	/* data[employee] = manager */
-	std::map<char, std::vector<char>> reverseMap;
+	/* data[employeeName] = managerName */
+	std::map<char, std::vector<char> > reverseMap;
 	std::map<char, char>::iterator it;
 
 	for (it = data.begin(); it != data.end(); it++) {
 		char employee = it->first; 
 		char manager = it->second;
+		if (employee == manager) /* CEO */
+			continue;
 		reverseMap[manager].push_back(employee);
 	}
-
+	std::map<char, int> employeeCountUnderManager;
+	for (it = data.begin(); it != data.end(); it++) {
+		std::cout << "Manager name: " << it->first << " # Employees: " 
+			<< countEmployeeManagerPrivate(reverseMap, it->first, employeeCountUnderManager) << std::endl;
+	}
 }
 
 int main(int argc, char* argv[]) {
@@ -121,5 +150,15 @@ int main(int argc, char* argv[]) {
 
 	printTravelItinerary(fromToCity);
 
+	std::map<char, char> employeeManager;
+	employeeManager['A'] = 'C';
+	employeeManager['B'] = 'C';
+	//employeeManager['C'] = 'C';
+	employeeManager['C'] = 'F';
+	employeeManager['D'] = 'E';
+	employeeManager['E'] = 'F';
+	employeeManager['F'] = 'F';
+
+	printEmployeeManagerCount(employeeManager);
 	return 0;
 }
